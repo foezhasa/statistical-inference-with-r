@@ -1,0 +1,558 @@
+---
+title: "Quantitative Methods in Political Science - Homework 3"
+author:
+- Fatih Özhasar, Part 3
+date: 'Due: September 29, 2022'
+output:
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: no
+---
+
+
+```{r setup, include=FALSE}
+# The first line sets an option for the final document that can be produced from
+# the .Rmd file. Don't worry about it.
+knitr::opts_chunk$set(echo = TRUE)
+
+# The next bit (lines 22-43) is quite powerful and useful. 
+# First you define which packages you need for your analysis and assign it to 
+# the p_needed object. 
+p_needed <- c("viridis") # add your packages here 
+
+# Now you check which packages are already installed on your computer.
+# The function installed.packages() returns a vector with all the installed 
+# packages.
+packages <- rownames(installed.packages())
+
+# Then you check which of the packages you need are not installed on your 
+# computer yet. Essentially you compare the vector p_needed with the vector
+# packages. The result of this comparison is assigned to p_to_install.
+p_to_install <- p_needed[!(p_needed %in% packages)]
+
+# If at least one element is in p_to_install you then install those missing
+# packages.
+if (length(p_to_install) > 0) {
+  install.packages(p_to_install)
+}
+# Now that all packages are installed on the computer, you can load them for
+# this project. Additionally the expression returns whether the packages were
+# successfully loaded.
+sapply(p_needed, require, character.only = TRUE)
+```
+
+> **Note:** If you do not have any special reason, please do not load additional packages to solve this homework assignment. If you nevertheless do so, please indicate why you think this is necessary and add the package to the `p_needed` vector in the setup chunk above.
+
+
+## Part 1: Definitions
+
+**1.1 What is a sampling distribution? If you consider a sampling distribution of the sample mean, what can you say about its shape, center, and spread?**
+
+Answer:A sampling distribution describes the distribution of a statistic (such as the sample mean) across all possible random samples of a fixed size drawn from a population. For the sampling distribution of the sample mean, its shape is approximately normal for sufficiently large samples (by the Central Limit Theorem), its center equals the true population mean, and its spread is given by the standard error, which is the population standard deviation divided by the square root of the sample size.
+  
+**1.2 What is a confidence interval? Which assumptions does it rely on?**
+
+Answer: A confidence interval is a range of values constructed from sample data that is expected to contain the true population parameter with a specified probability (e.g., 95%). It relies on assumptions such as random sampling, independence of observations, and either normality of the sampling distribution or a sufficiently large sample size for the Central Limit Theorem to apply.
+
+
+
+## Part 2: Confidence Intervals
+
+*You collected a random sample of 50 students and asked them to rate chancellor Merkel on a scale from 1 to 5, with 5 being the highest rating. The mean score is $2.3$ and the sample has a standard deviation of $0.86$.*
+
+**2.1 Estimate Merkel's rating for the population of students and calculate a 95% and a 99% confidence interval analytically. Interpret these confidence intervals.**
+  
+```{r Exercise 2_1}
+
+n <- 50
+mean_rating <- 2.3
+sd_rating <- 0.86
+
+se <- sd_rating / sqrt(n)
+
+ci_95 <- mean_rating + c(-1, 1) * qnorm(0.975) * se
+ci_99 <- mean_rating + c(-1, 1) * qnorm(0.995) * se
+
+ci_95
+ci_99
+
+
+
+```
+
+Answer:
+
+
+**2.2 Imagine you ran the survey again and had obtained the same information from a random sample of 150 students instead of 50. Calculate the 95% confidence interval analytically and interpret this interval. How and why does it differ from the confidence interval in 2.1?**
+
+```{r Exercise 2_2}
+
+n2 <- 150
+se2 <- sd_rating / sqrt(n2)
+
+ci_95_large <- mean_rating + c(-1, 1) * qnorm(0.975) * se2
+ci_95_large
+
+```
+
+Answer:The confidence interval with 150 students is narrower than in 2.1 because a larger sample size reduces the standard error. This leads to more precise estimates of the population mean.
+
+**2.3 Consider the confidence interval in 2.2: If you ran the survey again, can you expect with 95% confidence that the average rating of Merkel in this new sample will lie within the 95\% confidence interval from 2.2?**
+
+Answer: No. A 95% confidence interval refers to uncertainty about the population mean, not the probability that a new sample mean will fall within the interval. A new sample mean is itself a random variable and may lie outside the previously constructed confidence interval.
+
+**2.4 Repeat 2.1 and 2.2, but this time construct the confidence interval using simulation. Plot the resulting distribution. Is it different from the analytical one? If so, how and why?**
+
+```{r Exercise 2_3}
+
+set.seed(123)
+
+sim_means_50 <- replicate(10000, mean(rnorm(50, mean = 2.3, sd = 0.86)))
+sim_means_150 <- replicate(10000, mean(rnorm(150, mean = 2.3, sd = 0.86)))
+
+quantile(sim_means_50, c(0.025, 0.975))
+quantile(sim_means_150, c(0.025, 0.975))
+
+plot(density(sim_means_50),
+     main = "Simulated Sampling Distribution (n = 50)",
+     xlab = "Sample Mean",
+     lwd = 2)
+
+plot(density(sim_means_150),
+     main = "Simulated Sampling Distribution (n = 150)",
+     xlab = "Sample Mean",
+     lwd = 2)
+
+
+```
+
+Answer:
+
+
+## Part 3: Smart Mannheim Students
+
+*In the general population IQ is distributed normally with a mean of 100 and a standard deviation of 19. You take a simple random sample of 40 students in Mannheim and find that their mean IQ is 117.* 
+
+**3.1 Calculate the standard error of the mean. What does this value tell you?**
+
+```{r Exercise 3_1}
+
+#generate a random population
+
+pop <- rnorm(1000, mean = 100, sd = 19) # we know the "true" values
+summary(pop)
+var(pop)
+
+#take a simple random sample of 40
+sample(pop, 40)
+
+pop1 <- rnorm(40, mean = 117)
+summary(pop)
+var(pop)
+
+#calculating the standard error of the pop mean
+pop_se <- sd(pop) / sqrt(length(pop))
+pop_se
+#calculating the standard error of the pop1 mean
+
+pop1_se <- sd(pop1) / sqrt(length(pop1))
+pop1_se
+
+
+
+```
+
+
+```{r}
+# Parameters
+pop_mean <- 100
+pop_sd <- 19
+n <- 40
+sample_mean <- 117
+
+# Calculation
+standard_error <- pop_sd / sqrt(n)
+print(standard_error)
+# [1] 3.004164
+```
+
+Answer: the standard error of the general population is greater than the standart error of the random sample of 40 students in Mannheim. A low standard error shows that sample means are closely distributed around the population mean. A low standard error shows that sample means are closely distributed around the population mean, the sample is representative of my population. 
+
+**3.2 Someone claims that on average, Mannheim students have a higher IQ than the general population. Given your data, do you agree?**
+
+```{r Exercise 3_2}
+
+mean(pop)
+mean(pop1)
+
+pop_se
+pop1_se
+
+
+
+```
+
+```{r}
+# Calculate Z-score for the sample mean
+z_score <- (sample_mean - pop_mean) / standard_error
+
+# Calculate the p-value (upper tail)
+p_value <- pnorm(z_score, lower.tail = FALSE)
+
+print(z_score) # [1] 5.658812
+print(p_value) # [1] 7.56463e-09
+```
+
+
+Answer:The mean value of general population is 99.94 and mean value of Mannheim students is 117.04. The standard error of these values are 0.59 and 0.12, respectively. Since the standard error of the mean value of Mannheim students is smaller than the general population, I would agree with the above mentioned statement. A low standard error shows that sample means are closely distributed around the population mean, the sample is representative of my population. 
+
+
+
+**3.3 What is more likely: observing a sample with mean IQ of 117 or observing an individual with an IQ of 117?**
+
+```{r Exercise 3_3}
+
+
+# Probability of an individual having IQ >= 117
+prob_individual <- pnorm(117, mean = 100, sd = 19, lower.tail = FALSE)
+
+# Probability of a sample mean (n=40) being >= 117
+prob_sample <- pnorm(117, mean = 100, sd = standard_error, lower.tail = FALSE)
+
+print(prob_individual) # [1] 0.1855467 (~18.6%)
+print(prob_sample)     # [1] 7.56463e-09 (~0.0000007%)
+
+```
+
+Answer:
+
+**3.4 Now suppose you got the IQ scores of 40 students who receive scholarships for academic excellence instead of a random sample. Does reporting the confidence intervals for the mean IQ address the problem of bias in sampling?**
+
+Answer: The short answer is no. While confidence intervals are a powerful tool for quantifying uncertainty, they cannot fix or account for a biased sampling method. Confidence interval is a way to construct an interval that will contain the *true value* in some fixed proportion of *repeated samples*.
+
+**3.5 Suppose that, based on a different sample, 95% confidence interval for the mean IQ of Mannheim students was calculated as (109, 125). How would you evaluate the following interpretations of this confidence interval? Say whether you think the interpretation is correct or not and explain why you think so.**
+
+```{r}
+#generate a random population
+
+pop <- rnorm(1000, mean = 100, sd = 19) # we know the "true" values
+summary(pop)
+var(pop)
+
+#take a simple random sample of 70 which is different than the previous one
+sample(pop, 70)
+
+pop2 <- rnorm(70, mean = 117)
+summary(pop2)
+var(pop2)
+
+#calculate the 95% confidence interval for the mean IQ of Mannheim students
+pop2_se <- sd(pop2) / sqrt(length(pop2))
+pop2_se
+
+ci_lo <- mean(pop2) + qnorm(0.025, 0, 1) * pop2_se 
+ci_up <- mean(pop2) + qnorm(0.975, 0, 1) * pop2_se
+ci_an <- c(ci_lo, ci_up)
+ci_an
+
+```
+
+```{r}
+# Simulation: 100 different researchers take samples and build 95% CIs
+set.seed(123)
+n <- 40
+mu <- 117 # Assume the "true" mean for this simulation
+sigma <- 19
+reps <- 100
+
+# Create a plot showing 100 intervals
+plot(NULL, xlim=c(100, 135), ylim=c(1, reps), 
+     xlab="IQ", ylab="Sample Number", main="100 Samples: 95% Confidence Intervals")
+abline(v = mu, col = "red", lwd = 2) # The True Mean
+
+count_contains <- 0
+
+for(i in 1:reps) {
+  sample_data <- rnorm(n, mean = mu, sd = sigma)
+  se <- sigma / sqrt(n)
+  mean_val <- mean(sample_data)
+  
+  # Calculate 95% CI
+  lower <- mean_val - 1.96 * se
+  upper <- mean_val + 1.96 * se
+  
+  # Check if it contains true mean
+  contains <- lower <= mu & upper >= mu
+  color <- ifelse(contains, "skyblue", "darkred")
+  if(contains) count_contains <- count_contains + 1
+  
+  lines(c(lower, upper), c(i, i), col = color, lwd = 2)
+}
+
+# The number of blue lines should be approximately 95
+print(paste("Intervals containing true mean:", count_contains))
+```
+
+
+
+
+
+
+> *95% of the time the mean IQ of Mannheim students in this sample is between 109 and 125, if we were to draw repeated samples.*
+
+Answer: The above mentioned calculations showed that the 95% confidence intervals of mean IQ of Mannheim students in this sample is between 116.6809 and 117.1529. Therefore this interpretation is correct.
+
+> *95% of all students in Mannheim have IQ between 109 and 125.*
+
+Answer: This interpretation may not be correct since the sample size does not include 95% of all students in Mannheim. 
+
+> *We are 95% confident that the mean IQ of all students in Mannheim is between 109 and 125.*
+
+Answer: This interpretation may not be correct since the sample may not include students who have the IQ that is below 109 or above 125. 
+
+> *We are 95% confident that the mean IQ of all students in this sample is between 109 and 125.*
+
+Answer: That interpretation is correct because calculation of 95% confidence interval that base on the sample from Mannheim students is between 109 and 125.
+
+> *If we repeated the experiment a large number of times, there is a 95% chance that the mean IQ of Mannheim students is between 109 and 125 in each time.*
+
+Answer: The calculations below shows that when we repeat the experiment large number of times, here 100, 95% confidence interals that mean IQ of Mannheim students will not always be between 109 and 125. It can be seen that there are values like 95.04915 and 133.7746 in the dataset. 
+
+```{r}
+# create a population
+
+true_mean <- 117
+pop <- rnorm(10000, true_mean, 100)
+
+# Now we need to do the sampling part, we will take samples many times, say 100.
+
+n_iter <- 100 # we will take 100 samples (but only one in real life)
+estimates <- NULL # empty object for estimates
+confis <- matrix(rep(NA, n_iter * 2), # empty matrix for CIs
+  ncol = 2, # for lower and upper CIs
+  nrow = n_iter
+)
+for (i in seq_len(n_iter)) { # for the length of n_iter do:
+  pop_sample <- sample(x = pop, size = 100) # take a sample of 100
+  estimates[i] <- mean(pop_sample) # store its mean
+  se <- sd(pop_sample) / sqrt(length(pop_sample)) # store SE for the sample
+  confis[i, ] <- mean(pop_sample) + qnorm(c(0.025, 0.975)) * se # store 95% CIs
+}
+head(estimates)
+head(confis)
+
+```
+
+
+## Part 4: Proportions
+
+*Suppose that a military dictator in an unnamed country holds a plebiscite (a yes/no vote of confidence) and claims that he was supported by 68\% of the voters. A human rights group suspects foul play and hires you to test the validity of the dictator's claim. You have a budget that allows you to randomly sample 180 voters from the country. You collect your sample of 180, and you find that 95 people actually voted yes.*
+
+**4.1 You decide to have a closer look at the sample and explore if there are significant differences in support rates of the dictator between individuals who identify as men or women. In your sample, 80 respondents are women and 45% of women reported voting *yes*.**
+
+**4.1.1 What is the share of men voting for the dictator?**
+
+```{r Exercise 4_1_1}
+# Given data
+n_total <- 180
+total_yes <- 95
+
+# Subgroup: Women
+n_women <- 80
+prop_women_yes <- 0.45
+
+# 1. Calculate number of women who voted "yes"
+n_women_yes <- n_women * prop_women_yes # 80 * 0.45 = 36
+
+# 2. Calculate number of men in the sample
+n_men <- n_total - n_women # 180 - 80 = 100
+
+# 3. Calculate number of men who voted "yes"
+# (Total yes votes minus women yes votes)
+n_men_yes <- total_yes - n_women_yes # 95 - 36 = 59
+
+# 4. Calculate the proportion of men who voted "yes"
+prop_men_yes <- n_men_yes / n_men
+
+# Print results
+cat("Number of men in sample:", n_men, "\n")
+cat("Number of men voting 'yes':", n_men_yes, "\n")
+cat("Share of men voting for the dictator:", prop_men_yes, "\n")
+
+
+
+
+
+```
+
+Answer: 
+
+**4.1.2 Calculate the difference between proportions of supporters among men and women and 95% confidence intervals for this difference using simulation. What is your conclusion: do men, on average, tend to support the dictator more than women?**
+
+```{r Exercise 4_1_2}
+
+
+# 1. Setup Data
+n_women <- 80
+n_men <- 100
+yes_women <- 36 # 45% of 80
+yes_men <- 59   # 59% of 100
+
+# Actual observed difference
+obs_diff <- (yes_men / n_men) - (yes_women / n_women) # 0.59 - 0.45 = 0.14
+
+# 2. Create the raw data vector (1 = Yes, 0 = No)
+votes <- c(rep(1, yes_women + yes_men), rep(0, (n_women + n_men) - (yes_women + yes_men)))
+gender <- c(rep("Woman", n_women), rep("Man", n_men))
+
+# 3. Simulation (Permutation Test)
+set.seed(42)
+n_sims <- 10000
+sim_diffs <- numeric(n_sims)
+
+for(i in 1:n_sims) {
+  # Shuffle the gender labels
+  shuffled_gender <- sample(gender)
+  
+  # Calculate proportions in the shuffled groups
+  p_men <- mean(votes[shuffled_gender == "Man"])
+  p_women <- mean(votes[shuffled_gender == "Woman"])
+  
+  # Store the difference
+  sim_diffs[i] <- p_men - p_women
+}
+
+# 4. Calculate 95% Confidence Interval for the difference
+# Using the bootstrap method for the CI of the actual difference
+boot_diffs <- numeric(n_sims)
+for(i in 1:n_sims) {
+  sample_men <- sample(c(rep(1, yes_men), rep(0, n_men-yes_men)), replace = TRUE)
+  sample_women <- sample(c(rep(1, yes_women), rep(0, n_women-yes_women)), replace = TRUE)
+  boot_diffs[i] <- mean(sample_men) - mean(sample_women)
+}
+
+ci_95 <- quantile(boot_diffs, probs = c(0.025, 0.975))
+
+# Results
+cat("Observed Difference:", obs_diff, "\n")
+cat("95% Confidence Interval for the difference:", ci_95, "\n")
+cat("P-value (Probability of difference by chance):", mean(abs(sim_diffs) >= obs_diff), "\n")
+
+```
+
+Answer: Based on the standard significance level:
+$$\alpha = 0.05$$
+
+:Do men support the dictator more? While the sample shows a higher proportion of men (59%) than women (45%), the difference is not statistically significant at the 95% level if the CI includes zero.Interpretation: There is a "suggestive" trend that men support the dictator more, but we don't have enough evidence in this small sample ($N=180$) to claim this is a definitive pattern in the whole population.
+
+
+**4.1.3 Calculate the standard error of the difference from simulation. Compare this standard error for proportion difference with analytical one:**
+
+$SE = \sqrt{\frac{p_1(1-p_1)}{n_1} + \frac{p_2(1-p_2)}{n_2}}$
+
+```{r Exercise 4_1_3}
+
+
+# Parameters from previous steps
+n_w <- 80
+p_w <- 0.45
+n_m <- 100
+p_m <- 0.59
+
+# 1. Analytical Standard Error Calculation
+se_analytical <- sqrt((p_w * (1 - p_w) / n_w) + (p_m * (1 - p_m) / n_m))
+
+# 2. Simulation (Bootstrap) Standard Error Calculation
+set.seed(42)
+n_sims <- 10000
+
+# Create the data vectors based on observed counts
+women_votes <- c(rep(1, 36), rep(0, 44)) # 45% of 80
+men_votes   <- c(rep(1, 59), rep(0, 41)) # 59% of 100
+
+boot_diffs <- numeric(n_sims)
+
+for(i in 1:n_sims) {
+  # Resample with replacement within each group
+  resample_w <- sample(women_votes, size = n_w, replace = TRUE)
+  resample_m <- sample(men_votes, size = n_m, replace = TRUE)
+  
+  # Calculate and store the difference in proportions
+  boot_diffs[i] <- mean(resample_m) - mean(resample_w)
+}
+
+# The Standard Error from simulation is the standard deviation of the bootstrap distribution
+se_simulation <- sd(boot_diffs)
+
+# Display results
+cat("Analytical Standard Error:", round(se_analytical, 5), "\n")
+cat("Simulated Standard Error: ", round(se_simulation, 5), "\n")
+
+```
+Conclusion:The two values are nearly identical (differing only slightly due to simulation noise).The Analytical SE ($0.07425$) is derived from the theoretical properties of the binomial distribution.The Simulated SE ($\approx 0.07449$) provides a robust estimate by approximating the sampling distribution through repeated resampling.This confirms that the mathematical formula accurately captures the variability of the difference in proportions for this sample size. With an SE of approximately 7.4%, the observed difference of 14% is roughly 1.89 standard errors away from zero, explaining why the 95% confidence interval ($1.96 \times SE$) just barely includes or touches zero.
+
+
+**4.2 (Optional) Given the information from the sample, what is the probability that at least 68\% of the population voted yes?**
+
+
+
+```{r Exercise 4_2}
+
+# 1. Setup Sample Data
+n <- 180
+yes_votes <- 95
+p_hat <- yes_votes / n  # 0.5277 (Sample Proportion)
+claim_p <- 0.68         # Dictator's claimed proportion
+
+# 2. Calculate Standard Error (SE) for the proportion
+# Using the sample proportion as the best estimate of population spread
+se_p <- sqrt((p_hat * (1 - p_hat)) / n)
+
+# 3. Calculate the Probability
+# We want the area under the curve to the RIGHT of 0.68
+# if our distribution is centered at our sample mean of 0.527
+prob_at_least_68 <- pnorm(claim_p, mean = p_hat, sd = se_p, lower.tail = FALSE)
+
+# Result
+cat("Sample Proportion:", round(p_hat, 4), "\n")
+cat("Standard Error:", round(se_p, 4), "\n")
+cat("Probability population mean is >= 68%:", prob_at_least_68, "\n")
+
+```
+Based on your sample of 180 voters, the probability that the true support for the dictator is actually $68\%$ or higher is extremely low. Statistically, it is highly improbable that a population with $68\%$ support would produce a random sample where only $52.7\%$ of people voted "Yes."The human rights group’s suspicion of "foul play" is strongly supported by this statistical evidence.
+
+**4.3 (Optional) What is the probability that a majority of people in the country support the dictator?**
+
+```{r Exercise 4_3}
+
+# 1. Input Sample Data
+n <- 180
+yes_votes <- 95
+p_hat <- yes_votes / n  # Observed proportion (approx 0.5278)
+
+# 2. Calculate the Standard Error (SE) for the proportion
+se_p <- sqrt((p_hat * (1 - p_hat)) / n)
+
+# 3. Calculate the probability that the true proportion is > 0.50
+# We use the normal distribution centered at our sample proportion
+prob_majority <- pnorm(0.50, mean = p_hat, sd = se_p, lower.tail = FALSE)
+
+# Display Results
+cat("Sample Proportion (p-hat):", round(p_hat, 4), "\n")
+cat("Standard Error (SE):", round(se_p, 4), "\n")
+cat("Probability of a true majority (> 50%):", round(prob_majority, 4), "\n")
+
+
+```
+
+sample shows a support rate of 52.78%. This is technically a majority within the sample.The Uncertainty: Because the sample size is relatively small ($180$), there is a margin of error. The standard error is approximately 0.0372 ($3.72\%$).The Probability: The calculation shows a probability of approximately 0.7723 (or 77.2%).
+
+# R code
+
+<!-- The chunk below will print out the code from all the chunks in the document, even if you chose to hide chunks in the main text with `echo=FALSE` chunk option or `include=FALSE` option. You do not need to put any code in this chunk manually: it will gather code from other chunks automatically. -->
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
